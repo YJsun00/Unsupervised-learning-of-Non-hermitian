@@ -4,10 +4,7 @@ import scipy.linalg as la
 from scipy.linalg import eig
 import math
 
-GAMMA = 0.4
-T2 = 0.6
-N = 40
-epsilon = 0.0001
+
 
 
 def diffusion_mat(datas, gaussian_kfunc):
@@ -46,7 +43,6 @@ class GaussianKernel:
         else:
             raise Exception("undefine norm type")
 
-
 class SSH_OB_data:
     def __init__(self, gamma, t1_list, t2, N, path="./"):
         self.path = path
@@ -68,70 +64,16 @@ class SSH_OB_data:
         init[2*self.N-2:2*self.N, 2*self.N-4:2*self.N-2] = T.transpose().conjugate()
 
         w1, right_v = np.linalg.eig(init)  # w: eigenvalue; v: eigenstate. Complex Hermitian (conjugate symmetric) or a real symmetric matrix.
-        w2, left_v = np.linalg.eig(
-                 init.transpose().conjugate())  # w: eigenvalue; v: eigenstate. Complex Hermitian (conjugate symmetric) or a real symmetric matrix.
-        w2 = w2.conjugate()
-        inv_index = np.argsort(w2)
-        # inv_index = inv_index[::-1]
-        w2 = w2[inv_index]
-        left_v = left_v[:, inv_index]
-        inv_index = np.argsort(w1)
-        w1 = w1[inv_index]
-        right_v = right_v[:, inv_index]
+        left_v = la.inv(right_v).conjugate().transpose()
 
         '''Energy'''
-        num_list1 = []
-        num_list2 = []
+        num_list = []
         for i in range(right_v.shape[1]):
-            if w1[i].real < -0.001:
-                num_list1.append(i)
-        for i in range(left_v.shape[1]):
-            if w2[i].real < -0.001:
-                num_list2.append(i)
-        right_v = right_v[:, num_list1]
-        w1 = w1[num_list1]
-        left_v = left_v[:, num_list2]
-        w2 = w2[num_list2]
-
-        # w1, left_v, right_v = eig(init, left=True)
-        test = np.dot(left_v.transpose().conjugate(), right_v)
-        aa = right_v.shape[0]
-        for i in range(right_v.shape[1]):
-            if np.sqrt(test[i, i])>10**(-12):
-                right_v[:, i] = right_v[:, i] / np.sqrt(test[i, i])
-                left_v[:, i] = left_v[:, i] / np.sqrt(test[i, i])
-        test2 = np.dot(left_v.transpose().conjugate(), right_v)
-
-        # left_v = left_v.transpose().conjugate()
-
-        # test = np.dot(left_v.transpose().conjugate(), right_v)
-        # remove_list = []
-        # for i in range(len(w1)):
-        #     if abs(w1[i]) <= 0.001:
-        #         remove_list.append(i)
-        # right_v = np.delete(right_v, remove_list, axis=1)
-        # left_v = np.delete(left_v, remove_list, axis=1)
-        # w1 = np.delete(w1, remove_list, axis=0)
-
-        # num_list1 = []
-        # num_list2 = []
-        # for i in range(right_v.shape[1]):
-        #     if w1[i].real < -0.001:
-        #         num_list1.append(i)
-        # for i in range(left_v.shape[1]):
-        #     if w2[i].real < -0.001:
-        #         num_list2.append(i)
-        # right_v = right_v[:, num_list1]
-        # left_v = left_v[:, num_list2]
-
-        # test = list(range(1, self.N, 2))
-        # test_0 = left_v.shape[1]
-
-        # right_v = right_v[:, range(0, self.N-1, 2)]
-        # left_v = left_v[:, range(1, self.N, 2)]
-
+            if w1[i].real < 0:
+                num_list.append(i)
+        right_v = right_v[:, num_list]
+        left_v = left_v[:, num_list]
         p = np.dot(right_v, left_v.transpose().conjugate())
-        # p = np.outer(right_v, left_v.transpose().conjugate())
         return p
 
     def modify_p(self, data):
@@ -178,12 +120,14 @@ class SSH_OB_data:
 
 
 if __name__ == '__main__':
-    t1_list = []
+    GAMMA = 0.4
+    T2 = 0.6
+    N = 40
+    epsilon = 0.001
+
     a = math.pi
-    for i in range(500):
-        t1_list.append(0.0 + i * 1 / math.pi ** 5)
-        # t1_list.append(0.4902 + i * 1/math.pi**5)
     # t1_list = np.arange(0, 1.7, 0.001)
+    t1_list = np.arange(0, 1.6306, 1/math.pi**5)
     test = SSH_OB_data(GAMMA, t1_list, T2, N)
     P_list = test.construct_p_list()
     kfunc = GaussianKernel(N, epsilon)
