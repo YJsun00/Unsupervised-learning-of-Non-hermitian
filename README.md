@@ -4,4 +4,6 @@ Follow the paper:
 
 ## Update 2023-02-01
 
-Progress of diffusion maps method in new folder using matlab.
+Progress of diffusion maps method in new folder using matlab: generate the figure in supplimentary material Fig.2 (a)
+
+Same progress using Python in the file"NH-skineffect.py"
